@@ -1,0 +1,28 @@
+Package: flexMatch
+Title: Flexible Matching for Stacked Difference-in-Differences
+Version: 0.1.0
+Authors@R: 
+    person("Aleksandr", "Kazakov", email = "avkazakov@proton.me",
+           role = c("aut", "cre", "cph"))
+Description: Tools for building stacked difference-in-differences samples in
+    staggered-adoption settings. The package labels valid treated and control
+    candidates, performs cross-sectional matching, expands matched units into
+    event-time stacks, and returns diagnostics for balance assessment and
+    visualization.
+License: MIT + file LICENSE
+Depends: R (>= 4.1.0)
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.3
+Imports: data.table, ggplot2, MatchIt, scales
+Suggests: fixest, knitr, rmarkdown, testthat (>= 3.0.0)
+Config/testthat/edition: 3
+URL: https://github.com/avkazakovgit/flexMatch
+BugReports: https://github.com/avkazakovgit/flexMatch/issues
+VignetteBuilder: knitr
+NeedsCompilation: no
+Packaged: 2026-10-11 18:17:41 UTC; avkazakov
+Author: Aleksandr Kazakov [aut, cre, cph]
+Maintainer: Aleksandr Kazakov <avkazakov@proton.me>
+Repository: CRAN
+Date/Publication: 2026-10-21 15:40:08 UTC

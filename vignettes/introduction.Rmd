@@ -1,0 +1,77 @@
+---
+title: "From panel data to matched event-time stacks"
+author: "Aleksandr Kazakov"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{From panel data to matched event-time stacks}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7, fig.height = 4)
+library(flexMatch)
+```
+
+## The task
+
+`flexMatch` helps construct matched event windows when units experience treatment at different times. It makes sample eligibility and matching visible before estimation. A clean window and good covariate balance do not establish causal identification: parallel trends, anticipation, repeated treatment and the target estimand still need substantive justification.
+
+## Example data
+
+The bundled data are entirely synthetic. The complete panel contains 10,000 units and 65,000 observations, including missing histories and repeated events. We use 100 units so every example is quick.
+
+```{r data}
+data("flexmatch_example")
+panel <- flexmatch_example[flexmatch_example$unit_id <= 100, ]
+head(panel)
+```
+
+## Screen, match, and expand
+
+```{r pipeline}
+result <- flexmatch(panel, "unit_id", "year", "event",
+  k_pre = 1, k_post = 1, k_freeze = 1,
+  match_vars = c("size", "leverage"), method = "nearest",
+  assess_quality = TRUE, plot_events = TRUE, verbose = FALSE)
+result$diagnostics
+head(result$final_expanded_data)
+```
+
+The treatment indicator marks event starts. `k_pre` and `k_post` define the window; `k_freeze` extends the cooldown after an event. Matching uses covariates at `match_by = -1` by default, with exact matching on the event period. Period distances count the ordered periods present in the input. A completely missing calendar period must be handled in the input before using these distances.
+
+## Inspect the sample
+
+```{r timing}
+print(result$event_plot)
+```
+
+```{r balance}
+result$quality_stats$balance_table
+print(result$quality_stats$numeric_balance_panel)
+```
+
+Balance thresholds are descriptive aids. They do not prove parallel trends or eliminate unobserved confounding.
+
+## Choose controls and histories
+
+Use `control_type = "nevert"` for never-treated controls or `"nyt"` for eventual adopters before their first event. `"all"` and `"nt"` currently select the same clean-window pool. `treated_type = "all"` allows repeated events that satisfy the window rules. This assumes earlier events have no remaining relevant effect after the chosen cooldown; that assumption should be justified.
+
+`include_all_years = TRUE` retains observed histories and bins periods outside the window. Those extra observations are not guaranteed to satisfy the clean-window rules and should not be treated as automatically uncontaminated controls for estimation.
+
+## Illustrative event regression
+
+```{r estimation}
+if (requireNamespace("fixest", quietly = TRUE)) {
+  fit <- fit_event_study(result$final_expanded_data, "outcome", "year")
+  coef(fit)
+}
+```
+
+The wrapper uses matching weights, a unit-within-set fixed effect, a matched-set-by-calendar-period fixed effect, and clustering by the original unit. Pooled stacked estimates still require an appropriate weighting and treatment-effect interpretation; this wrapper does not implement every modern difference-in-differences estimator.
+
+## Function reference
+
+Use `help(package = "flexMatch")`, `?flexmatch`, and `?flexmatch_example` for the full R help index. The lower-level functions expose each stage for inspection and customization.
